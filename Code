@@ -1,0 +1,151 @@
+#include <SoftwareSerial.h>
+SoftwareSerial gsm(10, 11);
+int nem=A0;
+int nemsonuc;
+int su=A1;
+int suseviye;
+String smsMetni = "";
+int BEKLE=1;
+char gelen;
+int motor=13;
+String gelensms="";
+String subilgi;
+
+
+
+void SMSgonder(String mesaj) {
+
+  gsm.begin(9600);
+ // gsm.print("AT+CMGF=1");
+  delay(100);
+  gsm.println("AT+CMGS=\"+905374310537\"");// telefon numarasi degistir
+  delay(100);
+  gsm.println(mesaj);
+  delay(100);
+  gsm.println((char)26);
+  delay(100);
+  gsm.println();
+  delay(100);
+  gsm.println("AT+CMGD=1,4");
+  delay(100);
+  gsm.println("AT+CMGF=1");
+  delay(100);
+  gsm.println("AT+CNMI=1,2,0,0,0");
+  delay(200);
+  smsMetni = "";
+}
+
+
+void smscoz() {
+  while (gsm.available()) {
+    delay(BEKLE);
+    gelen = gsm.read();
+    gelensms=gelensms+gelen;
+    Serial.println(gelensms);
+  }
+} 
+        
+void motorac(){
+  digitalWrite(motor,1);
+  }
+void motorkapat(){
+  digitalWrite(motor,0);
+  }          
+void setup() {
+  
+  pinMode(motor,OUTPUT);
+  gsm.begin(9600);
+  delay(100);
+  gsm.println("AT+CMGF=1");
+  delay(100);
+  gsm.println("AT+CNMI=1,2,0,0,0");
+  gsm.println("AT+CMGD=1,4");
+  SMSgonder("_____!!SISTEM BASLADI!!_____ \n \n ---------------Komutlar--------------- \n\n Motoru Calistir =>> #Ac \n \n Motoru Durdur =>> #Kapat \n\n Nem Orani =>> #Nem");
+  Serial.println("Sistem Açıldı");
+  gsm.flush();
+  
+}
+
+void loop() {
+  smscoz();
+  if(gelensms.indexOf("#Ac")>=0)
+  {
+    Serial.println("Motor Calistirildi");
+
+ //////////////////////////////////////////
+    gsm.begin(9600);
+    delay(100);
+    gsm.println("AT+CMGF=1");
+    delay(100);
+    gsm.println("AT+CNMI=1,2,0,0,0");
+    gsm.println("AT+CMGD=1,4");
+    SMSgonder("Motor Calistirildi");
+    gsm.flush();
+ //////////////////////////////////////////   
+    motorac();
+    gelensms="";
+    }
+  if(gelensms.indexOf("#Kapat")>=0)
+  {
+    Serial.println("Motor Kapatıldı");
+   //////////////////////////////////////////
+    gsm.begin(9600);
+    delay(100);
+    gsm.println("AT+CMGF=1");
+    delay(100);
+    gsm.println("AT+CNMI=1,2,0,0,0");
+    gsm.println("AT+CMGD=1,4");
+    SMSgonder("Motor Kapatildi");
+    gsm.flush();
+    ///////////////////////////////////////////
+     motorkapat();
+    gelensms="";
+    }
+  if(gelensms.indexOf("#Nem")>=0)
+  {
+  
+    nemsonuc=analogRead(nem);
+    nemsonuc = map(nemsonuc,0,1023,100,0);
+    gsm.begin(9600);
+    delay(100);
+    gsm.println("AT+CMGF=1");
+    delay(100);
+    gsm.println("AT+CNMI=1,2,0,0,0");
+    gsm.println("AT+CMGD=1,4");
+    
+    SMSgonder("Nem Oraniniz: %" + String(nemsonuc));
+    gsm.flush();    
+    gelensms="";
+    }
+
+  if(gelensms.indexOf("#Su")>=0)
+  {
+    suseviye=analogRead(su);
+ 
+    if(suseviye>=500)
+    {
+      subilgi="SU seviyesi: fazla";
+     }
+    if(suseviye<500)
+    {
+      subilgi="Su seviyesi: orta";
+     }
+     if(suseviye<=100)
+    {
+      subilgi="Su seviyesi: az";
+     }
+    
+    gsm.begin(9600);
+    delay(100);
+    gsm.println("AT+CMGF=1");
+    delay(100);
+    gsm.println("AT+CNMI=1,2,0,0,0");
+    gsm.println("AT+CMGD=1,4");
+    
+    SMSgonder(subilgi);
+    gsm.flush();    
+    gelensms="";
+    }
+
+  delay(1);
+}
